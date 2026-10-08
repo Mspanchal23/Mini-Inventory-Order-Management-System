@@ -10,9 +10,21 @@ export class ApiRequestError extends Error {
   }
 }
 
+/**
+ * Development: VITE_API_URL or the local API.
+ * Production: the API is served from the same domain (/api). A localhost URL copied from a
+ * local .env into the hosting settings would never work for visitors, so it is ignored.
+ */
+const resolveBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL?.trim();
+  if (import.meta.env.PROD) {
+    return envUrl && !/localhost|127\.0\.0\.1/.test(envUrl) ? envUrl : '/api';
+  }
+  return envUrl || 'http://localhost:5000/api';
+};
+
 const axiosClient = axios.create({
-  // In a production build the API is served from the same domain (/api) unless overridden.
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api'),
+  baseURL: resolveBaseUrl(),
   timeout: 15000,
 });
 
