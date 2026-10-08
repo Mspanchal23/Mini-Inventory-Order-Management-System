@@ -11,7 +11,8 @@ export class ApiRequestError extends Error {
 }
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  // In a production build the API is served from the same domain (/api) unless overridden.
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api'),
   timeout: 15000,
 });
 

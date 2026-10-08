@@ -19,6 +19,7 @@ cases (race conditions, duplicate lines, price changes, deleted products) are ha
 - [Database / Models](#database--models)
 - [Tricky Logic Implemented](#tricky-logic-implemented)
 - [Screenshots](#screenshots)
+- [Deployment (Vercel)](#deployment-vercel)
 - [Design Decisions & Notes](#design-decisions--notes)
 
 ---
@@ -359,6 +360,37 @@ Any other transition (confirm a cancelled order, cancel twice, edit a confirmed 
 
 ---
 
+## Deployment (Vercel)
+
+The repository deploys as **one Vercel project with two services**, configured in [`vercel.json`](vercel.json):
+
+| Path      | Service  | Notes |
+|-----------|----------|-------|
+| `/api/*`  | `server` | Express app (`server/src/app.js`) running as a Vercel Function |
+| `/*`      | `client` | Vite build; unknown paths fall back to `index.html` so deep links like `/orders/:id` work |
+
+Both run on the same domain, so the frontend calls the API at `/api` and no CORS setup is needed.
+
+**Steps**
+
+1. Create a MongoDB Atlas cluster (free tier is fine). Add a database user, and under **Network Access** allow `0.0.0.0/0`, because Vercel does not use fixed IPs.
+2. Import the GitHub repository in Vercel. It detects `vercel.json` automatically.
+3. Under **Project → Settings → Environment Variables**, add:
+
+   | Variable       | Value |
+   |----------------|-------|
+   | `MONGO_URI`    | Atlas connection string, e.g. `mongodb+srv://user:pass@cluster0.xxxxx.mongodb.net/inventory_db` |
+   | `NODE_ENV`     | `production` |
+   | `CLIENT_URL`   | the deployed URL, e.g. `https://your-app.vercel.app` |
+   | `VITE_API_URL` | optional. Production builds default to `/api` |
+
+4. Deploy. To load sample data, run `npm run seed` locally with `MONGO_URI` temporarily pointing to Atlas.
+
+On Vercel, `src/server.js` does not run. The app connects to MongoDB on the first API request and reuses that
+connection for later requests (`server/src/config/db.js`). If the database cannot be reached, the API returns `503`.
+
+---
+
 ## Design Decisions & Notes
 
 - **No MongoDB transactions required.** Transactions need a replica set, which a default local MongoDB
@@ -369,7 +401,7 @@ Any other transition (confirm a cancelled order, cancel twice, edit a confirmed 
 - **Customers** are stored in their own collection. In the order form, choosing an existing customer reuses
   that record (and refreshes their contact details); typing a new name creates a new customer.
 - **Authentication** is out of scope for this task (single admin, no login).
-- **Rate limiting** is per IP and stored in memory; for multiple server instances a shared store (e.g. Redis)
+- **Rate limiting** is per IP and stored in memory (per instance on Vercel); for multiple instances a shared store (e.g. Redis)
   would be used.
 - **Known limitation:** if the server process crashes in the middle of confirming an order, the order's
   `isProcessing` lock would need to be cleared manually. In production this would be handled with a lock
