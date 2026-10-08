@@ -180,6 +180,16 @@ npm run dev                 # opens http://localhost:5173
 
 Base URL: `http://localhost:5000/api`
 
+### Postman collection
+
+Import [`server/Inventory-API.postman_collection.json`](server/Inventory-API.postman_collection.json) into Postman.
+It has requests for every endpoint and a **Tricky cases** folder (cancel twice, edit confirmed order,
+over-stock, negative quantity, duplicate SKU, price change, soft delete) with test assertions.
+Ids are saved into collection variables automatically, so you can use **Run collection** (start the server first).
+The `baseUrl` collection variable defaults to `http://localhost:5000/api`.
+
+Command line alternative: `npx newman run server/Inventory-API.postman_collection.json`
+
 ### Response format
 
 ```jsonc
