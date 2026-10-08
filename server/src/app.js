@@ -29,6 +29,15 @@ const ensureDatabase = async (_req, _res, next) => {
   return next();
 };
 
+// Root endpoint: quick check that the server is up (no database needed).
+app.get('/', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'Mini Inventory & Order Management API is running',
+    health: '/api/health',
+  });
+});
+
 app.use('/api', apiLimiter, writeLimiter, ensureDatabase, routes);
 
 app.use(notFound);
